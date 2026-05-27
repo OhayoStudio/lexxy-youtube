@@ -14,28 +14,32 @@ YouTube embed extension for [Lexxy](https://github.com/OhayoStudio/lexxy) rich-t
 
 ## Installation
 
+Not published to RubyGems — install from GitHub:
+
 ```ruby
-# Gemfile
-gem "lexxy-youtube"
+# Gemfile (next to your existing `gem "lexxy"`)
+gem "lexxy-youtube", github: "OhayoStudio/lexxy-youtube"
 ```
 
 ```bash
 bundle install
 ```
 
-## Usage
+The Rails engine auto-pins the asset through its own importmap config, so you
+**don't** add a `pin` in your app's `config/importmap.rb`. Confirm it resolved:
 
-Pin the JS in your importmap:
-
-```ruby
-# config/importmap.rb
-pin "lexxy_youtube", to: "lexxy_youtube.js"
+```bash
+bin/importmap json | grep lexxy_youtube
+# => "lexxy_youtube": "/assets/lexxy_youtube-<digest>.js"
 ```
 
-Import it in the layout or view where Lexxy is used:
+## Usage
 
-```erb
-<%= javascript_import_tag "lexxy_youtube" %>
+Import the extension right after Lexxy in `app/javascript/application.js`:
+
+```js
+import "lexxy"
+import "lexxy_youtube"
 ```
 
 That's it. The extension self-registers with Lexxy on import:
@@ -43,9 +47,15 @@ That's it. The extension self-registers with Lexxy on import:
 - **Paste a YouTube URL** anywhere in the editor → auto-converted to an embed
 - **Toolbar button** (YouTube icon) → opens a URL input dropdown for manual embeds
 
+Embeds render in the editor (including after saving and reopening) out of the
+box — the extension whitelists its own markup with Lexxy's client-side
+sanitizer.
+
 ## Action Text sanitizer
 
-If you use Action Text to store the editor output, whitelist the `<iframe>` and `<figure>` tags so embeds survive the sanitizer:
+This is the one thing your app must configure. If you store the editor output
+with Action Text, whitelist `<iframe>`/`<figure>` so embeds survive Action
+Text's **server-side** sanitizer and render on public pages:
 
 ```ruby
 # config/initializers/action_text_sanitizer.rb
@@ -57,6 +67,18 @@ Rails.application.config.after_initialize do
   ]
 end
 ```
+
+## Troubleshooting
+
+**Embed shows when inserted and on the public page, but reopening the saved
+article in the editor leaves an empty figure (a "big space").** Your installed
+version predates the editor-sanitizer fix — `bundle update lexxy-youtube`. (Lexxy
+sanitizes HTML client-side with DOMPurify on load and strips `<iframe>` unless an
+extension whitelists it; current versions declare this via `allowedElements`, so
+it's handled internally.)
+
+**Embed missing on the public page** but fine in the editor → you skipped the
+Action Text sanitizer above.
 
 ## License
 
