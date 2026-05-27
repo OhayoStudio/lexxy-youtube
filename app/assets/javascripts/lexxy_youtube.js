@@ -39,6 +39,17 @@ const youtubeIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
 
 // Toolbar extension — adds a YouTube button with URL dropdown
 class YoutubeExtension extends Extension {
+  // Whitelist the embed markup for Lexxy's client-side sanitizer so the
+  // iframe (and the figure's inline aspect-ratio style) survive the
+  // round-trip back into the editor. Without this, DOMPurify strips the
+  // iframe on load and only the empty figure remains.
+  get allowedElements() {
+    return [
+      { tag: "iframe", attributes: [ "src", "title", "frameborder", "allowfullscreen", "loading", "allow", "style", "width", "height" ] },
+      { tag: "figure", attributes: [ "class", "style" ] }
+    ]
+  }
+
   initializeToolbar(toolbar) {
     const details = document.createElement("details")
     details.className = "lexxy-editor__toolbar-dropdown"
